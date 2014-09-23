@@ -288,7 +288,7 @@ page_init(void)
 		//found next free! using boot_alloc.  
 		//Set all before it (Kern text/data) to used.  All after to free.
  
-		else if (i < PGNUM(nextBootFree)){
+		else if (i >= EXTPHYSMEM/PGSIZE && i < PGNUM(nextBootFree)){
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
 		}
@@ -333,7 +333,9 @@ page_alloc(int alloc_flags)
 
 	if(alloc_flags & ALLOC_ZERO)
 		memset(p, '\0', PGSIZE);		
-	
+		
+	free->pp_link = NULL;
+
 	return free;
 }
 
@@ -348,9 +350,8 @@ page_free(struct PageInfo *pp)
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
 
-	//TODO: FIX
-	//if (pp->pp_ref != 0 || pp->pp_link != NULL)
-	//	panic("used!");
+	if (pp->pp_ref != 0 || pp->pp_link != NULL)
+		panic("used!");
 
 	pp->pp_link = page_free_list;
 	page_free_list = pp;
