@@ -393,8 +393,40 @@ page_decref(struct PageInfo* pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
+	
 	// Fill this function in
-	return NULL;
+
+	//Aha, so this is where we check those bits and bytes
+
+	uint32_t pdx = PDX(va); 	//Page Directory Index
+	uint32_t ptx = PTX(va);		//Page Table Index
+	struct PageInfo *pde_pg;	//Page of PDE	
+	pde_t *ptp = NULL;		//PDE pointer to page table page
+
+	//If the directory exists and permission are set as PTE present?
+	if (pgdir[pdx] & PTE_P) {
+		pde_pg = pa2page (pgdir[pdx]);
+		ptp = page2kva(pde_pg); 
+	}
+
+	//if not page table page does not exist yet, 
+	else {
+		if (!create)
+			return NULL;
+		
+		struct PageInfo *page = page_alloc(ALLOC_ZERO);
+
+		if (!page)
+			return NULL;
+
+		//return new page table page
+		page->pp_ref += 1;
+		pgdir[pdx] = page2pa(page) | PTE_U | PTE_P; 
+		ptp = page2kva(page);
+	}
+
+	return &ptp[ptx];
+	
 }
 
 //
@@ -412,6 +444,27 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
+
+	//Remember: pgdir_walk returns pointer to the PTE for a va.
+
+	// | is a bitwise OR.  & is a bitwise AND.  
+	// |= is bitwise OR assignemnt a|=b -> a = a|b  
+
+	uint32_t pdx = PDX(va);
+	uintptr_t over = va;
+
+	//While we're still of size, keep moving up va/pa
+	for (; size > 0; va+= PGSIZE, pa+=PGSIZE, size-=PGSIZE){
+		if (va < over)  	//overflow
+			break;
+		
+		//Get the ptr and map to physical.  
+		pte_t *pte_ptr = pgdir_walk(pgdir, (void *)va, true);
+		*pte_ptr = pa | perm | PTE_P;
+
+		//pgdir[pdx] |= perm | PTE_P;
+	}
+	
 }
 
 //
@@ -443,6 +496,24 @@ int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
 	// Fill this function in
+
+	pte_t *pte_ptr = pgdir_walk(pgdir, va, true);
+	uint32_t pdx = PDX(va);
+	
+	if (!pte_ptr) 	//could not allocate
+		return -E_NO_MEM;
+	
+	//TODO: Corner Case??
+
+	pp->pp_ref += 1;
+
+	if (*pte_ptr & PTE_P)
+		page_remove(pgdir, va);		//if already page mapped
+
+	*pte_ptr = page2pa(pp) | perm | PTE_P;
+	pgdir[pdx] |= *pte_ptr & 0xfff;
+	tlb_invalidate(pgdir,va);	
+
 	return 0;
 }
 
@@ -461,6 +532,21 @@ struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
 	// Fill this function in
+
+	pte_t *pte_ptr = pgdir_walk(pgdir, va, false); 	//get the pointer to page mapped at va
+	
+	//TODO: Fix pa2page (is panicing!)
+	struct PageInfo *page = pa2page(PTE_ADDR(*pte_ptr));
+	
+	if (pte_store != 0)	//if not zero, then store (ptr to page)? in add of store 
+		*pte_store = pte_ptr;
+	
+	if (!pte_ptr)		//if no page, return NULL
+		return NULL;
+	
+	if (*pte_ptr & PTE_P)	//if the page exists and is used.
+		return page;
+
 	return NULL;
 }
 
@@ -483,6 +569,19 @@ void
 page_remove(pde_t *pgdir, void *va)
 {
 	// Fill this function in
+	//TODO: physical page should be freed? 	
+
+	struct PageInfo *page = NULL;
+	pte_t *pte_ptr;
+	
+	page = page_lookup(pgdir, va, &pte_ptr);
+	if (page){				//set page one that's mapped.  If exists
+		page_decref(page);		//ref count decrement
+		if (page->pp_ref == 0)		//if refcount = 0, invalidate
+			tlb_invalidate(pgdir, va);
+		*pte_ptr = 0;			//corresponding PTE set to 0
+	}
+
 }
 
 //
