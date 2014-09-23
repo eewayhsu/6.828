@@ -504,6 +504,7 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 		return -E_NO_MEM;
 	
 	//TODO: Corner Case??
+	//TODO: What, on demand allocating? 
 
 	pp->pp_ref += 1;
 
@@ -511,7 +512,6 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 		page_remove(pgdir, va);		//if already page mapped
 
 	*pte_ptr = page2pa(pp) | perm | PTE_P;
-	pgdir[pdx] |= *pte_ptr & 0xfff;
 	tlb_invalidate(pgdir,va);	
 
 	return 0;
@@ -535,8 +535,7 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 
 	pte_t *pte_ptr = pgdir_walk(pgdir, va, false); 	//get the pointer to page mapped at va
 	
-	//TODO: Fix pa2page (is panicing!)
-	struct PageInfo *page = pa2page(PTE_ADDR(*pte_ptr));
+	//TODO: Fix pa2page (is panicing! PGNUM(pa) >= npages is true!)... might be here?
 	
 	if (pte_store != 0)	//if not zero, then store (ptr to page)? in add of store 
 		*pte_store = pte_ptr;
@@ -545,7 +544,7 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 		return NULL;
 	
 	if (*pte_ptr & PTE_P)	//if the page exists and is used.
-		return page;
+		return pa2page(PTE_ADDR(*pte_ptr));
 
 	return NULL;
 }
