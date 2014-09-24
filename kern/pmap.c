@@ -103,12 +103,14 @@ boot_alloc(uint32_t n)
 		return nextfree;
 	}
 
+	//TODO: Panic when out of memory?
+	if((uint32_t)nextfree + n >= KERNBASE + 0x400000)
+		panic("Out of memory!");
+
 	result = nextfree;
 	nextfree += ROUNDUP(n, PGSIZE);
 
 	return result;
-
-//TODO: panic if nextfree is greater than 2gb? Read Above in detect  
 
 
 }
@@ -182,6 +184,8 @@ mem_init(void)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
 
+	boot_map_region(kern_pgdir, UPAGES, PTSIZE, PADDR(pages), PTE_U);
+
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
 	// stack.  The kernel stack grows down from virtual address KSTACKTOP.
@@ -193,6 +197,8 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+	
+	boot_map_region(kern_pgdir, KSTACKTOP - KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);	
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -202,6 +208,10 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+	
+	//TODO: Write a boot_map_region! 
+
+	boot_map_region(kern_pgdir, KERNBASE, -KERNBASE, 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -401,11 +411,13 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	uint32_t pdx = PDX(va); 	//Page Directory Index
 	uint32_t ptx = PTX(va);		//Page Table Index
 	struct PageInfo *pde_pg;	//Page of PDE	
-	pde_t *ptp = NULL;		//PDE pointer to page table page
+	pte_t *ptp = NULL;		//PDE pointer to page table page
 
+	//cprintf("%x\n", pgdir[pdx]);
+ 
 	//If the directory exists and permission are set as PTE present?
 	if (pgdir[pdx] & PTE_P) {
-		pde_pg = pa2page (pgdir[pdx]);
+		pde_pg = pa2page (pgdir[pdx] & ~0xfff);
 		ptp = page2kva(pde_pg); 
 	}
 
@@ -450,7 +462,6 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 	// | is a bitwise OR.  & is a bitwise AND.  
 	// |= is bitwise OR assignemnt a|=b -> a = a|b  
 
-	uint32_t pdx = PDX(va);
 	uintptr_t over = va;
 
 	//While we're still of size, keep moving up va/pa
@@ -461,8 +472,6 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 		//Get the ptr and map to physical.  
 		pte_t *pte_ptr = pgdir_walk(pgdir, (void *)va, true);
 		*pte_ptr = pa | perm | PTE_P;
-
-		//pgdir[pdx] |= perm | PTE_P;
 	}
 	
 }
@@ -497,22 +506,19 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
 	// Fill this function in
 
-	pte_t *pte_ptr = pgdir_walk(pgdir, va, true);
-	uint32_t pdx = PDX(va);
-	
+	pte_t *pte_ptr = pgdir_walk(pgdir, va, true);	
+
 	if (!pte_ptr) 	//could not allocate
 		return -E_NO_MEM;
-	
-	//TODO: Corner Case??
-	//TODO: What, on demand allocating? 
 
 	pp->pp_ref += 1;
 
-	if (*pte_ptr & PTE_P)
+	if (*pte_ptr & PTE_P){
 		page_remove(pgdir, va);		//if already page mapped
-
+		tlb_invalidate(pgdir, va);
+	}
 	*pte_ptr = page2pa(pp) | perm | PTE_P;
-	tlb_invalidate(pgdir,va);	
+	
 
 	return 0;
 }
@@ -534,8 +540,6 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 	// Fill this function in
 
 	pte_t *pte_ptr = pgdir_walk(pgdir, va, false); 	//get the pointer to page mapped at va
-	
-	//TODO: Fix pa2page (is panicing! PGNUM(pa) >= npages is true!)... might be here?
 	
 	if (pte_store != 0)	//if not zero, then store (ptr to page)? in add of store 
 		*pte_store = pte_ptr;
@@ -568,17 +572,15 @@ void
 page_remove(pde_t *pgdir, void *va)
 {
 	// Fill this function in
-	//TODO: physical page should be freed? 	
 
-	struct PageInfo *page = NULL;
+	struct PageInfo *page;
 	pte_t *pte_ptr;
 	
 	page = page_lookup(pgdir, va, &pte_ptr);
 	if (page){				//set page one that's mapped.  If exists
 		page_decref(page);		//ref count decrement
-		if (page->pp_ref == 0)		//if refcount = 0, invalidate
-			tlb_invalidate(pgdir, va);
-		*pte_ptr = 0;			//corresponding PTE set to 0
+		tlb_invalidate(pgdir, va);	
+		*pte_ptr = 0;			//set to 0
 	}
 
 }
@@ -758,8 +760,8 @@ check_kern_pgdir(void)
 	for (i = 0; i < n; i += PGSIZE)
 		assert(check_va2pa(pgdir, UPAGES + i) == PADDR(pages) + i);
 
-
-	// check phys mem
+	//TODO: FIX. Uncomment
+	// check phys memory
 	for (i = 0; i < npages * PGSIZE; i += PGSIZE)
 		assert(check_va2pa(pgdir, KERNBASE + i) == i);
 
