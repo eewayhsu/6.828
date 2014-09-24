@@ -111,8 +111,6 @@ boot_alloc(uint32_t n)
 	nextfree += ROUNDUP(n, PGSIZE);
 
 	return result;
-
-
 }
 
 // Set up a two-level page table:
@@ -208,8 +206,6 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
-	
-	//TODO: Write a boot_map_region! 
 
 	boot_map_region(kern_pgdir, KERNBASE, -KERNBASE, 0, PTE_W);
 
@@ -422,10 +418,9 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	}
 
 	//if not page table page does not exist yet, 
-	else {
-		if (!create)
+	else {	if (!create)
 			return NULL;
-		
+	
 		struct PageInfo *page = page_alloc(ALLOC_ZERO);
 
 		if (!page)
@@ -433,7 +428,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 
 		//return new page table page
 		page->pp_ref += 1;
-		pgdir[pdx] = page2pa(page) | PTE_U | PTE_P; 
+		pgdir[pdx] = page2pa(page) | PTE_U | PTE_P | PTE_W; 
 		ptp = page2kva(page);
 	}
 
@@ -462,13 +457,11 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 	// | is a bitwise OR.  & is a bitwise AND.  
 	// |= is bitwise OR assignemnt a|=b -> a = a|b  
 
-	uintptr_t over = va;
+	//uintptr_t over = va; (Should we check for overflow?)
 
 	//While we're still of size, keep moving up va/pa
 	for (; size > 0; va+= PGSIZE, pa+=PGSIZE, size-=PGSIZE){
-		if (va < over)  	//overflow
-			break;
-		
+	
 		//Get the ptr and map to physical.  
 		pte_t *pte_ptr = pgdir_walk(pgdir, (void *)va, true);
 		*pte_ptr = pa | perm | PTE_P;
