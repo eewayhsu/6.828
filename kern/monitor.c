@@ -168,7 +168,7 @@ mon_set(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
-
+// for dump, check PTE_P because if it's not mapped don't return anything.  Don't Seg Fault, check for null.  Use pgdirwalk to check that it is not null. 
 
 /***** Kernel monitor command interpreter *****/
 
