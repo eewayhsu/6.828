@@ -26,3 +26,13 @@
 6. 	We transition to running at an EIP above KERNBASE before we begin running C code.  It is at the jmp $eax instruction after the kernel loads the relocate label into eax.  
 	It is possible for us to continue executing at a low EIP between when we enable paging and when we begin running EIP above KERNBASE because when we turn on CR0 bit, it enables the Virtual memory hardware.  It interprets instructions as virtual addresses (which we mapped to physical addresses) in the first page table in the boot loader.  Also, 0x0 is also a virtual address.
 	This transition is necessary because we want to be able to hide kernel code from the user.  This is how we've defined the address space.  
+
+Challenge:
+
+I decided to implement an extension for the JOS kernel monitor.  Now, we have commands showmappings, set, and dump.  The challenge posed here is that we will most likely need more debugging tools in the future.  For showmappings, my new tool prints out the permission bits at given pages between the two given addresses.  
+Set nicely furthers this by giving an tool to set, change or clear permission bits.  This way, we can do more testing.  Especially given the third tool, dump.  
+Here I just |= the page table entry with the given permission the user wants.  
+
+Dump prints out the contents of a range of memory.  So this is just a bunch of hex codes?  I wasn't so sure of this one.  
+
+
