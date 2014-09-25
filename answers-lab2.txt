@@ -23,7 +23,6 @@
 
 5.	2^32 bytes / 2^12 page size = 2^20 pages. Each of these pages needs a page table entry.  Each page table entry is 4bytes.  So far we need 2^22 bytes.  To keep track of all these page table entries, we will need 2^22/2^12 = 2^10 page table pages.  Each one of these needs a page directory entry, which is also 4 bytes.  We will need 1 page table.  So we have 1 page table + 2 ^10 pages.  2^10 * 2^12 + 1 * 2^12 = 2^22 ~= 4mb.  
 
-6. 	We transition to running at an EIP above KERNBASE before we begin running Ccode.  It is at the jmp $eax instruction after the kernel loads the relocate label into eax.  
+6. 	We transition to running at an EIP above KERNBASE before we begin running C code.  It is at the jmp $eax instruction after the kernel loads the relocate label into eax.  
 	It is possible for us to continue executing at a low EIP between when we enable paging and when we begin running EIP above KERNBASE because when we turn on CR0 bit, it enables the Virtual memory hardware.  It interprets instructions as virtual addresses (which we mapped to physical addresses) in the first page table in the boot loader.  Also, 0x0 is also a virtual address.
-
 	This transition is necessary because we want to be able to hide kernel code from the user.  This is how we've defined the address space.  
