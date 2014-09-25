@@ -104,7 +104,7 @@ boot_alloc(uint32_t n)
 	}
 
 	//TODO: Panic when out of memory?
-	if((uint32_t)nextfree + n >= KERNBASE + 0x400000)
+	if((uint32_t)nextfree + n >= KERNBASE + 0xfc00000)
 		panic("Out of memory!");
 
 	result = nextfree;

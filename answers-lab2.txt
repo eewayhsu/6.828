@@ -1,7 +1,29 @@
-1. uintptr_t.  This is a virtual address.  
-2.
-3.
-4.
-5.
-6.
+1.	 uintptr_t.  This is a virtual address. 
 
+2. 	We start with UPAGES, KSTACKTOP - KSTKSIZE, KERNBASE
+
+	0xef000000 	0xf0000000 - 0x00008000		0xf0000000
+
+	Entry	Base Virtual Address	Points to (logically):
+	1023	    0xFFC00000		Page table for top 4mb phys mem 
+	1022	    0xFF800000		Page table for the next 4mb phys mem			
+	960 	    0xF0000000		Page table for bottom 4mb phys mem
+	959	    0xEFFF8000		CPU0's Kernel Stack
+	956 	    0xEF000000		User Pages 
+
+	2	    0x00800000		   No Mapping Yet
+	1	    0x00400000		     user space
+	0	    0x00000000
+
+3.	 The kernel and user environment are in the same address space.  However, this space is split into three sections.  The section that is the kernel's memory is located between [ULIM, 4gb).  In this section, the user has no read or write permissions; only the kernel can read or write.  So, this is due to the permission bits that are set.  
+	
+ 	The specific mechanism that protects the kernel's memory is the x86 protection levels.  It has 4, leveled from 0 to 3.  Level 0 is the kernel mode.  Level 3 is the user mode.  There is a check where Current Privilege Level <= Descriptor PL which allows the kernel to forbid systems for some privilge levels. 
+ 
+4. 	The maximum physical memory this operating system can support is 256MB because KERNBASE is at 0xf000000. This is what we have between KERNBASE and 2^32.  This is because we want all the linear addresses to map to the physical address.     
+
+5.	2^32 bytes / 2^12 page size = 2^20 pages. Each of these pages needs a page table entry.  Each page table entry is 4bytes.  So far we need 2^22 bytes.  To keep track of all these page table entries, we will need 2^22/2^12 = 2^10 page table pages.  Each one of these needs a page directory entry, which is also 4 bytes.  We will need 1 page table.  So we have 1 page table + 2 ^10 pages.  2^10 * 2^12 + 1 * 2^12 = 2^22 ~= 4mb.  
+
+6. 	We transition to running at an EIP above KERNBASE before we begin running Ccode.  It is at the jmp $eax instruction after the kernel loads the relocate label into eax.  
+	It is possible for us to continue executing at a low EIP between when we enable paging and when we begin running EIP above KERNBASE because when we turn on CR0 bit, it enables the Virtual memory hardware.  It interprets instructions as virtual addresses (which we mapped to physical addresses) in the first page table in the boot loader.  Also, 0x0 is also a virtual address.
+
+	This transition is necessary because we want to be able to hide kernel code from the user.  This is how we've defined the address space.  
