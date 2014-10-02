@@ -63,9 +63,92 @@ void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
+	//extern uint32_t handlers[32];
+	
+	void handler0();
+        void handler1();
+        void handler2();
+        void handler3();
+        void handler4();
+        void handler5();
+        void handler6();
+        void handler7();
+        void handler8();
+        void handler9();
+        void handler10();
+        void handler11();
+        void handler12();
+        void handler13();
+        void handler14();
+        void handler15();
+        void handler16();
+        void handler17();
+        void handler18();
+        void handler19();
+        void handler20();
+        void handler21();
+        void handler22();
+        void handler23();
+        void handler24();
+        void handler25();
+        void handler26();
+        void handler27();
+        void handler28();
+        void handler29();
+        void handler30();
+        void handler31();
+
+	//int i = 0;
 
 	// LAB 3: Your code here.
+	
+	int sel = GD_KT;
 
+	SETGATE(idt[0], 0, sel, &handler0, 0);
+        SETGATE(idt[1], 0, sel, &handler1, 0);
+        SETGATE(idt[2], 0, sel, &handler2, 0);
+        SETGATE(idt[3], 1, sel, &handler3, 3);
+        SETGATE(idt[4], 1, sel, &handler4, 0);
+        SETGATE(idt[5], 0, sel, &handler5, 0);
+        SETGATE(idt[6], 0, sel, &handler6, 0);
+        SETGATE(idt[7], 0, sel, &handler7, 0);
+        SETGATE(idt[8], 0, sel, &handler8, 0);
+        SETGATE(idt[9], 0, sel, &handler9, 0);
+
+        SETGATE(idt[10], 0, sel, &handler10, 0);
+        SETGATE(idt[11], 0, sel, &handler11, 0);
+        SETGATE(idt[12], 0, sel, &handler12, 0);
+        SETGATE(idt[13], 0, sel, &handler13, 0);
+        SETGATE(idt[14], 0, sel, &handler14, 0);
+        SETGATE(idt[15], 0, sel, &handler15, 0);
+
+        SETGATE(idt[16], 0, sel, &handler16, 0);
+        SETGATE(idt[17], 0, sel, &handler17, 0);
+        SETGATE(idt[18], 0, sel, &handler18, 0);
+        SETGATE(idt[19], 0, sel, &handler19, 0);
+	
+	SETGATE(idt[20], 0, sel, &handler20, 0);
+        SETGATE(idt[21], 0, sel, &handler21, 0);
+        SETGATE(idt[22], 0, sel, &handler22, 0);
+        SETGATE(idt[23], 0, sel, &handler23, 0);
+        SETGATE(idt[24], 0, sel, &handler24, 0);
+        SETGATE(idt[25], 0, sel, &handler25, 0);
+        SETGATE(idt[26], 0, sel, &handler26, 0);
+        SETGATE(idt[27], 0, sel, &handler27, 0);
+        SETGATE(idt[28], 0, sel, &handler28, 0);
+        SETGATE(idt[29], 0, sel, &handler29, 0);
+        SETGATE(idt[30], 0, sel, &handler30, 0);
+        SETGATE(idt[31], 0, sel, &handler31, 0);
+
+	
+	/*for (; i < 32; i++) {
+		SETGATE(idt[i], 0, GD_KT, &handlers[i], 0);
+	}
+
+	SETGATE(idt[3], 1, GD_KT, &handlers[3], 3);
+	SETGATE(idt[4], 1, GD_KT, &handlers[4], 0);
+	*/
+	
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -142,17 +225,20 @@ static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
-	// LAB 3: Your code here.
+	// LAB 3: Your code here   
 
 	// Unexpected trap: The user process or the kernel has a bug.
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT)
+	
+	   print_trapframe(tf);
+	   if (tf->tf_cs == GD_KT)
 		panic("unhandled trap in kernel");
-	else {
+	   else {
 		env_destroy(curenv);
 		return;
 	}
 }
+
+
 
 void
 trap(struct Trapframe *tf)
@@ -204,6 +290,11 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+
+ 	//TODO: FIX
+ 
+	//if ((tf->tf_cs & 3) == 0)
+	//   panic("page fault occur in kernel.");
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.

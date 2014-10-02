@@ -1,5 +1,6 @@
 /* See COPYRIGHT for copyright information. */
 
+
 #include <inc/x86.h>
 #include <inc/mmu.h>
 #include <inc/error.h>
@@ -193,7 +194,7 @@ env_setup_vm(struct Env *e)
 
 	p->pp_ref++;
 	e->env_pgdir = page2kva(p);
-	for (i = 955; i < 1024; i++)
+	for (i = PDX(UTOP); i < 1024; i++)
 		e->env_pgdir[i] = kern_pgdir[i];
 	
 	//memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
