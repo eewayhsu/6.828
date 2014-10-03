@@ -108,8 +108,7 @@ TRAPHANDLER_NOEC(handler28, 28)
 TRAPHANDLER_NOEC(handler29, 29)         
 TRAPHANDLER_NOEC(handler30, 30)         
 TRAPHANDLER_NOEC(handler31, 31)              
-   
-#TRAPHANDLER_NOEC(handler48, T_SYSCALL)      
+TRAPHANDLER_NOEC(handler48, T_SYSCALL)      
 #TRAPHANDLER(handler500, T_DEFAULT)
 
 

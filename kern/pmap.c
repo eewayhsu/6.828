@@ -632,9 +632,31 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
+	
+	
+	uintptr_t vaStart = (uintptr_t) va;
+	uintptr_t vaEnd = ROUNDUP((uintptr_t) vaStart + len, PGSIZE);
 
+	pte_t *pte_ptr = NULL;
+
+	for (; vaStart < vaEnd; vaStart += 4){
+		pte_ptr = pgdir_walk(env->env_pgdir, (const void*) vaStart, false);
+
+		if (vaStart > ULIM){
+			user_mem_check_addr = vaStart;
+			return -E_FAULT;}
+		if ((*pte_ptr & (perm | PTE_P)) != (perm | PTE_P)){
+			user_mem_check_addr = vaStart;
+			return -E_FAULT;}
+	}
+	
 	return 0;
+
 }
+
+
+
+
 
 //
 // Checks that environment 'env' is allowed to access the range
