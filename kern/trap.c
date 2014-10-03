@@ -63,7 +63,7 @@ void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
-	//extern uint32_t handlers[32];
+	extern uint32_t handlers[];	
 	
 	void handler0();
         void handler1();
@@ -97,8 +97,6 @@ trap_init(void)
         void handler29();
         void handler30();
         void handler31();
-
-	//int i = 0;
 
 	// LAB 3: Your code here.
 	
@@ -140,15 +138,96 @@ trap_init(void)
         SETGATE(idt[30], 0, sel, &handler30, 0);
         SETGATE(idt[31], 0, sel, &handler31, 0);
 
+	cprintf("0 %d \n", &handler0);
+	cprintf("1 %d \n", &handler1);
+	cprintf("2 %d \n", &handler2);
+	cprintf("3 %d \n", &handler3);
+	cprintf("4 %d \n", &handler4);
+	cprintf("5 %d \n", &handler5);
+	cprintf("6 %d \n", &handler6);
+	cprintf("7 %d \n", &handler7);
+	cprintf("8 %d \n", &handler8);
+	cprintf("9 %d \n", &handler9);
+	cprintf("10 %d \n", &handler10);
+	cprintf("11 %d \n", &handler11);
+	cprintf("12 %d \n", &handler12);
+	cprintf("13 %d \n", &handler13);
+	cprintf("14 %d \n", &handler14);
+	cprintf("15 %d \n", &handler15);
+	cprintf("16 %d \n", &handler16);
+	cprintf("17 %d \n", &handler17);
+	cprintf("18 %d \n", &handler18);
+	cprintf("19 %d \n", &handler19);
+	cprintf("20 %d \n", &handler20);
+	cprintf("21 %d \n", &handler21);
+	cprintf("22 %d \n", &handler22);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+	int i = 0;
+	int count = 0;
 	
-	/*for (; i < 32; i++) {
-		SETGATE(idt[i], 0, GD_KT, &handlers[i], 0);
+	for (; i < 8; i++) {
+		if (i == 3){
+			SETGATE(idt[i], 1, GD_KT, &handlers[count], 3);}
+		if (i == 4){
+			SETGATE(idt[i], 1, GD_KT, &handlers[count], 0);}
+		else{
+			SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);}
+		cprintf("%d %d\n", i, &handlers[count]);
+		count += 7;
 	}
 
-	SETGATE(idt[3], 1, GD_KT, &handlers[3], 3);
-	SETGATE(idt[4], 1, GD_KT, &handlers[4], 0);
-	*/
-	
+	for (; 8 <= i && i < 15; i++) {
+                SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
+		count += 6;
+                cprintf("%d %d\n", i,  &handlers[count]);
+	}
+
+	for (; 15 <= i && i < 17; i++) {
+                SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
+        	count += 7;
+                cprintf("%d %d\n", i, &handlers[count]);
+
+
+	}
+
+	SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
+		i += 1;
+		count += 6;
+                cprintf("%d %d\n", i, &handlers[count]);
+		
+
+        for (; 17 <= i && i < 32; i++) {
+                SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
+		count += 7;
+                cprintf("%d %d\n", i, &handlers[count]);
+
+        }
+
+*/
+
 	// Per-CPU setup 
 	trap_init_percpu();
 }
