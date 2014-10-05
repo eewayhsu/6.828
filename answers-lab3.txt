@@ -1,0 +1,16 @@
+1. The purpose of having an individual handler function for each exception and interrup we have is we have error codes.  Currently, depending on the error, we will either push a zero or push an error code.  We have two different trapframe macros.  If all exceptions and interrupts were delived to the same handler, we would have to do slightly more work in the one trapframe to decide whether we push the error code or 0.  It would be slightly messier.  
+
+Also, different interrupt handlers let you access different pieces of code (when you return).  Having different interrupt handler provides this accessibility that one handler would not.    
+
+2. No, we did not have to do anything.  This happens because interrupt vector 14 is because we don't have the permissions, the general protection trap is triggered instead of the one the user wanted to trigger.  We do not want to allow users to invoke exceptions of their choice.  If the kernel actually allows softint's int 14 instruction to invoke the kernel's page fault handler, then that would mean the user could choose or know which exception handler will throw.  They could then manipulate what is on the stack and what the kernel executes with kernel privliges (making CPL safety useless).     
+
+Challenge:  Directives
+I feel like I did the challenge somewhat incorrectly (or hacky).  I used .data and .text to have both the data segment and the assembly code segment in my trapentry.S.  I made my data global and called it all handlers.  In my trap.c, I initalized an array called handlers and used extern to retrieve from trapentry.S.  
+
+Here, things got tricky.  At first I tried to access each element in the array (as supposedly each line is an index as everything is 4 bytes away.  However, I was accessing the wrong memory locations.
+
+Then, I decided that since each TRAPHANDLER & TRAPHANDLER_NOEC are a number of assembly line codes, that perhaps they were taking up more space in the data segment. So, I tried to multiply everything by 7 or 6, the number of lines in the relative TRAPHANDLER macro.  
+
+This didn't work.  I went back and tried to see how far apart the locations were for the handlers (the offsets) when I had them correct (without implementing the challenge).  It seemed that all of the TRAPHANDLER_NOECs were 10 away (I've been using decimal.. so perhaps it's a little weird).  and all of the TRAPHANDLERs were 8 away.  I thus incremented this from my handlers[0] position, which should be the first handler0 (the divide by zero fault).  I must go back and look into this more.  
+
+  
