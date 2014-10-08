@@ -63,185 +63,16 @@ void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
-	extern uint32_t handlers[];	
-	
-	void handler0();
-        void handler1();
-        void handler2();
-        void handler3();
-        void handler4();
-        void handler5();
-        void handler6();
-        void handler7();
-        void handler8();
-        void handler9();
-        void handler10();
-        void handler11();
-        void handler12();
-        void handler13();
-        void handler14();
-        void handler15();
-        void handler16();
-        void handler17();
-        void handler18();
-        void handler19();
-        void handler20();
-        void handler21();
-        void handler22();
-        void handler23();
-        void handler24();
-        void handler25();
-        void handler26();
-        void handler27();
-        void handler28();
-        void handler29();
-        void handler30();
-        void handler31();
-	void handler48();
-	// LAB 3: Your code here.
-	
-	int sel = GD_KT;
+	extern long handlers[];	
 
-	SETGATE(idt[0], 0, sel, &handler0, 0);
-        SETGATE(idt[1], 0, sel, &handler1, 0);
-        SETGATE(idt[2], 0, sel, &handler2, 0);
-        SETGATE(idt[3], 1, sel, &handler3, 3);
-        SETGATE(idt[4], 1, sel, &handler4, 0);
-        SETGATE(idt[5], 0, sel, &handler5, 0);
-        SETGATE(idt[6], 0, sel, &handler6, 0);
-        SETGATE(idt[7], 0, sel, &handler7, 0);
-        SETGATE(idt[8], 0, sel, &handler8, 0);
-        SETGATE(idt[9], 0, sel, &handler9, 0);
-
-        SETGATE(idt[10], 0, sel, &handler10, 0);
-        SETGATE(idt[11], 0, sel, &handler11, 0);
-        SETGATE(idt[12], 0, sel, &handler12, 0);
-        SETGATE(idt[13], 0, sel, &handler13, 0);
-        SETGATE(idt[14], 0, sel, &handler14, 0);
-        SETGATE(idt[15], 0, sel, &handler15, 0);
-
-        SETGATE(idt[16], 0, sel, &handler16, 0);
-        SETGATE(idt[17], 0, sel, &handler17, 0);
-        SETGATE(idt[18], 0, sel, &handler18, 0);
-        SETGATE(idt[19], 0, sel, &handler19, 0);
-	
-	SETGATE(idt[20], 0, sel, &handler20, 0);
-        SETGATE(idt[21], 0, sel, &handler21, 0);
-        SETGATE(idt[22], 0, sel, &handler22, 0);
-        SETGATE(idt[23], 0, sel, &handler23, 0);
-        SETGATE(idt[24], 0, sel, &handler24, 0);
-        SETGATE(idt[25], 0, sel, &handler25, 0);
-        SETGATE(idt[26], 0, sel, &handler26, 0);
-        SETGATE(idt[27], 0, sel, &handler27, 0);
-        SETGATE(idt[28], 0, sel, &handler28, 0);
-        SETGATE(idt[29], 0, sel, &handler29, 0);
-        SETGATE(idt[30], 0, sel, &handler30, 0);
-        SETGATE(idt[31], 0, sel, &handler31, 0);
-	SETGATE(idt[48], 0, sel, &handler48, 3);
-
-	/*cprintf("0 %d \n", &handler0);
-	cprintf("1 %d \n", &handler1);
-	cprintf("2 %d \n", &handler2);
-	cprintf("3 %d \n", &handler3);
-	cprintf("4 %d \n", &handler4);
-	cprintf("5 %d \n", &handler5);
-	cprintf("6 %d \n", &handler6);
-	cprintf("7 %d \n", &handler7);
-	cprintf("8 %d \n", &handler8);
-	cprintf("9 %d \n", &handler9);
-	cprintf("10 %d \n", &handler10);
-	cprintf("11 %d \n", &handler11);
-	cprintf("12 %d \n", &handler12);
-	cprintf("13 %d \n", &handler13);
-	cprintf("14 %d \n", &handler14);
-	cprintf("15 %d \n", &handler15);
-	cprintf("16 %d \n", &handler16);
-	cprintf("17 %d \n", &handler17);
-	cprintf("18 %d \n", &handler18);
-	cprintf("19 %d \n", &handler19);
-	cprintf("20 %d \n", &handler20);
-	cprintf("21 %d \n", &handler21);
-	cprintf("22 %d \n", &handler22);*/
-
-
-
-/*
 	int i = 0;
-	long count = 0;
 	
-	for (; i < 8; i++) {
-		if (i == 3){
-			SETGATE(idt[i], 1, GD_KT, &handlers[count], 3);}
-		if (i == 4){
-			SETGATE(idt[i], 1, GD_KT, &handlers[count], 0);}
-		else{
-			SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);}
-		cprintf("%d %d\n", i, &handlers[count]);
-		count += 2;
-	}
-
-	for (; 8 <= i && i < 15; i++) {
-                SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
-		count += 2;
-                cprintf("%d %d\n", i,  &handlers[count]);
-	}
-
-	for (; 15 <= i && i < 17; i++) {
-                SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
-        	count += 2;
-                cprintf("%d %d\n", i, &handlers[count]);
-
-
-	}
-
-	SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
-		i += 1;
-		count += 2;
-                cprintf("%d %d\n", i, &handlers[count]);
-		
-
-        for (; 17 <= i && i < 32; i++) {
-                SETGATE(idt[i], 0, GD_KT, &handlers[count], 0);
-		count += 2;
-                cprintf("%d %d\n", i, &handlers[count]);
-
-        }
-*/
-
-/*	int i = 0;
-	long addr = (long)&handlers[0];
-	
-	for (; i < 8; i ++){
-
-		if (i == 3){
-                        SETGATE(idt[i], 1, GD_KT, addr, 3);}
-                if (i == 4){
-                        SETGATE(idt[i], 1, GD_KT, addr, 0);}
-                else{
-                        SETGATE(idt[i], 0, GD_KT, addr, 0);}
-
-		addr += 10;}			
-	
-	for (; 8 <= i && i < 15; i++) {
-	        SETGATE(idt[i], 0, GD_KT, addr, 0);
-                addr += 8;
-	}
-
-
-	for (; 15 <= i && i < 17; i++) {
-                SETGATE(idt[i], 0, GD_KT, addr, 0);
-                addr += 10;
-        }
-
-        SETGATE(idt[i], 0, GD_KT, addr, 0);
-                i += 1;
-                addr += 8;           
-
-        for (; 18 <= i && i < 32; i++) {
-                SETGATE(idt[i], 0, GD_KT, addr, 0);
-                addr += 10;
-        }
-*/
+	for (; i < 32; i ++)
+		SETGATE(idt[i], 0, GD_KT, handlers[i], 0);
+ 
+	SETGATE(idt[3], 1, GD_KT, handlers[3], 3);
+	SETGATE(idt[4], 1, GD_KT, handlers[4], 0);
+        SETGATE(idt[48], 0, GD_KT, handlers[32], 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -405,8 +236,6 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
- 	//TODO: FIX
  
 	if ((tf->tf_cs & 3) == 0)
 	   panic("page fault occur in kernel.");
