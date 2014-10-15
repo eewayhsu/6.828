@@ -279,6 +279,13 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+	uint32_t i, kstacktop_i; 
+	
+	for (i = 0; i < NCPU; i++) { 
+		kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
+		boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, 
+				KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W); 
+	}
 
 }
 
@@ -322,13 +329,15 @@ page_init(void)
 	
 	physaddr_t nextBootFree;
 	nextBootFree = PADDR(boot_alloc(0));
+	size_t mpentry = MPENTRY_PADDR/PGSIZE;
 
 	for (i = 0; i < npages; i++) {
 		//set page 0 as used
-		if (i == 0){
+		if (i == 0 || i == mpentry){
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
 		}
+
 		//set rest of base memory as free
 		else if (i < npages_basemem) {
 			pages[i].pp_ref = 0;
@@ -341,11 +350,10 @@ page_init(void)
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
 		}
-		
-		
+				
 		//found next free! using boot_alloc.  
-		//Set all before it (Kern text/data) to used.  All after to free.
- 
+		//Set all before it (Kern text/data) to used.  All after to free
+
 		else if (i >= EXTPHYSMEM/PGSIZE && i < PGNUM(nextBootFree)){
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
@@ -356,8 +364,6 @@ page_init(void)
 			pages[i].pp_link = page_free_list;
 			page_free_list = &pages[i];
 		}
-
-		
 
 	}
 }
@@ -674,7 +680,16 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	
+	size = ROUNDUP(size, PGSIZE);
+
+	if (base + size > MMIOLIM)
+		panic("overflow MMIOLIM \n");
+
+	boot_map_region(kern_pgdir, base, size, pa, PTE_W | PTE_PCD | PTE_PWT);
+	uintptr_t addr = base;
+	base += size;
+	return (void *) addr; 
 }
 
 static uintptr_t user_mem_check_addr;
