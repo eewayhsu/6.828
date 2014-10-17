@@ -11,9 +11,10 @@ We still need separate kernel stacks for each CPU because there even though only
 
 Q3. In your implementation of env_run() you should have called lcr3(). Before and after the call to lcr3(), your code makes references (at least it should) to the variable e, the argument to env_run. Upon loading the %cr3 register, the addressing context used by the MMU is instantly changed. But a virtual address (namely e) has meaning relative to a given address context--the address context specifies the physical address to which the virtual address maps. Why can the pointer e be dereferenced both before and after the addressing switch?
 
-My code currently stores e into curenv and then references curenv. e is a pointer allocated on the current processor's kernel stack.  The virtual addresses above UTOP are the same in every environment.     
+My code currently stores e into curenv and then references curenv. e is a pointer allocated on the current processor's kernel stack.  The virtual addresses above UTOP in every environment map to the same physical addresses.   
+  
 Q4. Whenever the kernel switches from one environment to another, it must ensure the old environment's registers are saved so they can be restored properly later. Why? Where does this happen?
 
-When the kernel switches from one environment to another it must ensure the old environment's registers are saved so they can be restored later because we will treat this as if it were never interrupted, transparent to the user code.  This happens when we switch from user mode to kernel mode in the trap frame.   
+When the kernel switches from one environment to another it must ensure the old environment's registers are saved so they can be restored later because we will treat this as if it were never interrupted.  This happens when we switch from user mode to kernel mode in the trap frame.   
 
 
