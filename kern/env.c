@@ -289,16 +289,16 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   (Watch out for corner-cases!)
 	
 	struct PageInfo *pp;
-	void *vaEnd;
+	uint32_t vaEnd, vaStart;
 
-	va = (void *)ROUNDDOWN((uintptr_t)va, PGSIZE);
-	vaEnd = va + ROUNDUP(len,PGSIZE);
+	vaStart = ROUNDDOWN((uint32_t)va, PGSIZE);
+	vaEnd = ROUNDUP((uint32_t)va + len, PGSIZE);
 
-	for (; va < vaEnd; va += PGSIZE) {
+	for (; vaStart < vaEnd; vaStart += PGSIZE) {
 		pp = page_alloc(0);
 		if (!pp)
 			panic("region_alloc: Out of Memory");
-		if(page_insert(e->env_pgdir, pp, va, PTE_U | PTE_W) != 0)
+		if(page_insert(e->env_pgdir, pp, (void *)vaStart, PTE_U | PTE_W) != 0)
 	 		panic("region_alloc: Failed to Mapped");
 	}
 }
