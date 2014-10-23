@@ -140,7 +140,13 @@ static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
-	panic("sys_env_set_pgfault_upcall not implemented");
+	struct Env *e;
+        
+	if (envid2env(envid, &e, 1) < 0)
+		return -E_BAD_ENV;
+
+	e->env_pgfault_upcall = func;
+	return 0;
 }
 
 // Allocate a page of memory and map it at 'va' with permission
@@ -159,6 +165,7 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 //	-E_INVAL if perm is inappropriate (see above).
 //	-E_NO_MEM if there's no memory to allocate the new page,
 //		or to allocate any necessary page tables.
+
 static int
 sys_page_alloc(envid_t envid, void *va, int perm)
 {
@@ -173,22 +180,31 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	struct Env *e;
 	struct PageInfo *page = page_alloc(ALLOC_ZERO);	
 
-	if (envid2env(envid, &e, 1) < 0)
-		return -E_BAD_ENV;
+	//TODO: Check all these bit operations.  I'm so confused.
+	//Do I need to specifically check if the caller doesn't have perm to change envid? 
 
-	if ((uint32_t)va >= UTOP || ((uint32_t)va % PGSIZE) != 0)
-		return -E_INVAL;
+	if (envid2env(envid, &e, 1) < 0){
+		cprintf("sys_page_alloc, case 1\n");
+		return -E_BAD_ENV;}
 
-	if (!((perm & PTE_U) && (perm & PTE_P)))
-		return -E_INVAL;
+	if ((uint32_t)va >= UTOP || ((uint32_t)va % PGSIZE) != 0){
+		cprintf("sys_page_alloc, case 1\n");
+		return -E_INVAL;}
+
+	if (!((perm & PTE_U) && (perm & PTE_P))){
+		cprintf("sys_page_alloc, case 1\n");
+		return -E_INVAL;}
 	
-	if (perm & ~(PTE_U | PTE_P | PTE_W | PTE_AVAIL))
-		return -E_INVAL;
+	if (perm & ~(PTE_U | PTE_P | PTE_W | PTE_AVAIL)){
+		cprintf("sys_page_alloc, case 1\n");
+		return -E_INVAL;}
 
-	if (!page)
-		return -E_NO_MEM;
+	if (!page){
+		cprintf("sys_page_alloc, case 1\n");
+		return -E_NO_MEM;}
 
 	if (page_insert(e->env_pgdir, page, va, perm) < 0){
+		cprintf("sys_page_alloc, case 1\n");
 		page_free(page);
 		return -E_NO_MEM;
 		}
@@ -234,7 +250,9 @@ sys_page_map(envid_t srcenvid, void *srcva,
 		|| (int32_t)dstva >= UTOP || (int32_t)dstva % PGSIZE != 0)
 		return -E_INVAL;
 
-	struct PageInfo *page = page_lookup(se->env_pgdir, srcva, 0);	
+	pte_t *pte;
+	struct PageInfo *page = page_lookup(se->env_pgdir, srcva, &pte);	
+	//struct PageInfo *page = page_lookup(se->env_pgdir, srcva, 0);
 
 	if (!page)
 		return -E_INVAL;
@@ -246,6 +264,9 @@ sys_page_map(envid_t srcenvid, void *srcva,
 		return -E_INVAL;
 
 	//TODO: if srcva is read-only, but perm & PTE_W
+
+	if ((perm & PTE_W) && !(*pte & PTE_W))
+		return -E_INVAL;
 
 	if (page_insert(de->env_pgdir, page, dstva, perm) < 0)
 		return -E_NO_MEM;
@@ -386,6 +407,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	case SYS_page_alloc:
 		return sys_page_alloc(a1, (void *)a2, a3);
 
+	case SYS_env_set_pgfault_upcall:
+		return sys_env_set_pgfault_upcall(a1, (void *)a2);
+	
 	default:
 		//return -E_NO_SYS;
 		return -E_INVAL;

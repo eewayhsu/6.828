@@ -302,9 +302,9 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
- 
+
 	if ((tf->tf_cs & 3) == 0)
-	   panic("page fault occur in kernel.");
+	   	panic("page_fault_handler: page fault occur in kernel. %d %d %d \n", tf->tf_trapno, tf->tf_err, tf->tf_cs);
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
@@ -339,10 +339,41 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 4: Your code here.
 
-	// Destroy the environment that caused the fault.
-	cprintf("[%08x] user fault va %08x ip %08x\n",
-		curenv->env_id, fault_va, tf->tf_eip);
-	print_trapframe(tf);
-	env_destroy(curenv);
-}
+	struct UTrapframe utframe;
+	uintptr_t utfp;
 
+	//TODO: Or no page allocated or stack overflow
+	//Currently we start again at UXSTACKTOP-1 if we run out of space.  
+	//should we actually kill the program or save over the UTrapframe one down because we need to jump to our original instructions again later?   
+	if (!curenv->env_pgfault_upcall){
+		// Destroy the environment that caused the fault.
+		cprintf("[%08x] user fault va %08x ip %08x\n",
+			curenv->env_id, fault_va, tf->tf_eip);
+		print_trapframe(tf);
+		env_destroy(curenv);
+		}
+
+	if (tf->tf_esp >= UXSTACKTOP-PGSIZE && tf->tf_esp <=  UXSTACKTOP-1) {
+		//Already on the Stack
+		//cprintf("%d, %d \n", sizeof(struct UTrapframe), sizeof(struct UTrapframe));
+		utfp = tf->tf_esp - sizeof(struct UTrapframe) - 4;
+		}
+
+	else
+		utfp = UXSTACKTOP - 1 - sizeof(struct UTrapframe);
+
+	user_mem_assert(curenv, (void *) utfp, sizeof(struct UTrapframe), PTE_W | PTE_U | PTE_P);
+			
+	utframe.utf_fault_va = fault_va;
+	utframe.utf_err = tf->tf_err;
+	utframe.utf_regs = tf->tf_regs;
+	utframe.utf_eip = tf->tf_eip;
+	utframe.utf_eflags = tf->tf_eflags;
+	utframe.utf_esp = tf->tf_esp;
+
+	*((struct UTrapframe *)utfp) = utframe;
+	tf->tf_eip = (uintptr_t) curenv->env_pgfault_upcall;
+	tf->tf_esp = utfp;
+
+	env_run(curenv); 
+}
