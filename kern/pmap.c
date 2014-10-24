@@ -719,17 +719,17 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 	
 	
 	uintptr_t vaStart = (uintptr_t) va;
-	uintptr_t vaEnd = ROUNDUP((uintptr_t) vaStart + len, PGSIZE);
+	uintptr_t vaEnd = ROUNDUP(vaStart + len, PGSIZE);
 
 	pte_t *pte_ptr = NULL;
 
-	for (; vaStart < vaEnd; vaStart += 4){
+	for (; vaStart < vaEnd; vaStart = ROUNDUP(vaStart + PGSIZE, PGSIZE)){
 		pte_ptr = pgdir_walk(env->env_pgdir, (const void*) vaStart, false);
 
 		if (vaStart > ULIM){
 			user_mem_check_addr = vaStart;
 			return -E_FAULT;}
-		if ((*pte_ptr & (perm | PTE_P)) != (perm | PTE_P)){
+		if (!pte_ptr || ((*pte_ptr & (perm | PTE_P)) != (perm | PTE_P))){
 			user_mem_check_addr = vaStart;
 			return -E_FAULT;}
 	}
