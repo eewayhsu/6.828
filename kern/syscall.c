@@ -184,27 +184,27 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//Do I need to specifically check if the caller doesn't have perm to change envid? 
 
 	if (envid2env(envid, &e, 1) < 0){
-		cprintf("sys_page_alloc, case 1\n");
+		cprintf("sys_page_alloc\n");
 		return -E_BAD_ENV;}
 
 	if ((uint32_t)va >= UTOP || ((uint32_t)va % PGSIZE) != 0){
-		cprintf("sys_page_alloc, case 1\n");
+		cprintf("sys_page_alloc \n");
 		return -E_INVAL;}
 
 	if (!((perm & PTE_U) && (perm & PTE_P))){
-		cprintf("sys_page_alloc, case 1\n");
+		cprintf("sys_page_alloc \n");
 		return -E_INVAL;}
 	
 	if (perm & ~(PTE_U | PTE_P | PTE_W | PTE_AVAIL)){
-		cprintf("sys_page_alloc, case 1\n");
+		cprintf("sys_page_alloc \n");
 		return -E_INVAL;}
 
 	if (!page){
-		cprintf("sys_page_alloc, case 1\n");
+		cprintf("sys_page_alloc \n");
 		return -E_NO_MEM;}
 
 	if (page_insert(e->env_pgdir, page, va, perm) < 0){
-		cprintf("sys_page_alloc, case 1\n");
+		cprintf("sys_page_alloc \n");
 		page_free(page);
 		return -E_NO_MEM;
 		}
@@ -341,7 +341,61 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	struct Env *e;
+	pte_t *ptep;
+	struct PageInfo *page;
+
+	if (envid2env(envid, &e, 0) < 0)
+		return -E_BAD_ENV;
+
+	if (e->env_ipc_recving == 0)
+		return -E_IPC_NOT_RECV;
+	
+	if ((uint32_t)srcva < UTOP) {
+		if ((uint32_t)srcva % PGSIZE != 0)
+			return -E_INVAL;
+
+		if (!((perm & PTE_U) && (perm & PTE_P))){
+			cprintf("perm invalid \n");
+			return -E_INVAL;}
+
+		if (perm & ~(PTE_U | PTE_P | PTE_W | PTE_AVAIL)){
+                        cprintf("perm invalid \n");
+			return -E_INVAL;}
+
+		if (!(page = page_lookup(curenv->env_pgdir, srcva, &ptep))){
+			cprintf("srcva not mapped in caller's addrspace \n");
+			return -E_INVAL;}
+
+		if ((perm & PTE_W) && (*ptep * PTE_W) == 0){
+			cprintf("srcva read-only, but PTE_W in perm \n");
+			return -E_INVAL;}
+
+		if ((uint32_t)e->env_ipc_dstva < UTOP){
+			//if (sys_page_map(0, srcva, envid, e->env_ipc_dstva, perm) < 0){
+			//	cprintf("Not enough mem to map srcva at dstva \n");
+			//	return -E_NO_MEM;}
+			//}
+
+			if (page_insert(e->env_pgdir, page, e->env_ipc_dstva, perm) < 0) {
+				cprintf("Not enough mem to map srcva at dstva \n");
+				return -E_NO_MEM;}
+				
+			}
+		}
+
+	e->env_ipc_recving = 0;
+	e->env_ipc_from = curenv->env_id;
+	e->env_ipc_value = value;
+	e->env_ipc_perm = 0;	
+
+	if ((int32_t)srcva < UTOP) 
+		e->env_ipc_perm = perm;
+
+	e->env_status = ENV_RUNNABLE;
+	
+	return 0;
+	  
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -359,7 +413,18 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+	
+	
+	if(((uint32_t)dstva < UTOP) && ((uint32_t)dstva % PGSIZE != 0))
+		return -E_INVAL;
+
+	curenv->env_ipc_recving = 1;
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+	curenv->env_tf.tf_regs.reg_eax = 0;
+
+	sched_yield();	
+
 	return 0;
 }
 
@@ -409,10 +474,15 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
 	case SYS_env_set_pgfault_upcall:
 		return sys_env_set_pgfault_upcall(a1, (void *)a2);
+
+	case SYS_ipc_recv:
+		return sys_ipc_recv((void *)a1);
+
+	case SYS_ipc_try_send:
+		return sys_ipc_try_send(a1, a2, (void *) a3, a4);
 	
 	default:
 		//return -E_NO_SYS;
 		return -E_INVAL;
 	}
 }
-

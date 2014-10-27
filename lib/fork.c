@@ -116,7 +116,8 @@ fork(void)
 	// LAB 4: Your code here.
 	envid_t envid;
 	uintptr_t va;
-
+	int r;
+	
 	set_pgfault_handler(pgfault);
 
 	envid = sys_exofork();
@@ -135,13 +136,13 @@ fork(void)
 			duppage(envid, PGNUM(va));
 		}
 
-	if (sys_page_alloc(envid, (void *) (UXSTACKTOP - PGSIZE), PTE_U | PTE_P | PTE_W) < 0)
+	if ((r = sys_page_alloc(envid, (void *) (UXSTACKTOP - PGSIZE), PTE_U | PTE_P | PTE_W)) < 0)
 		panic("fork: sys_page_alloc error \n");
 
-	if(sys_env_set_pgfault_upcall(envid, (void *)thisenv->env_pgfault_upcall) < 0)
+	if((r = sys_env_set_pgfault_upcall(envid, (void *)thisenv->env_pgfault_upcall)) < 0)
 		panic("fork: sys_env_set_pgfault_upcall error \n");
 
-	if(sys_env_set_status(envid, ENV_RUNNABLE) < 0)
+	if((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0)
 		panic("fork: sys_env_set_status error \n");
 
 	return envid;

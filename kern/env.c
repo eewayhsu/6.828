@@ -278,6 +278,10 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	env_free_list = e->env_link;
 	*newenv_store = e;
 
+	//if ((e->env_cs & 3) == 3)
+	e->env_tf.tf_eflags |= FL_IF;
+
+
 	cprintf("[%08x] new env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 	return 0;
 }
