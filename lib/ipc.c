@@ -22,14 +22,21 @@
 
 #define NO_PAGE_MAP (UTOP+1)
 
+//make sure original ipc_recv function is still in place
 int32_t
 ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
+{
+	return ipc_recv_src(0, from_env_store, pg, perm_store);
+}
+
+int32_t
+ipc_recv_src(envid_t source, envid_t *from_env_store, void *pg, int *perm_store)
 {
 	// LAB 4: Your code here.
 	int r;
 	void *dstva = pg ? pg : (void *) NO_PAGE_MAP;
 	
-	r = sys_ipc_recv(dstva);
+	r = sys_ipc_recv(source, dstva);
 
 	if(from_env_store)
 		*from_env_store = r == 0? thisenv->env_ipc_from : 0;
@@ -64,7 +71,7 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 			break;
 
 		if (r != -E_IPC_NOT_RECV)
-			panic("ipc_send: sys_ipc_try_send error \n");
+			panic("ipc_send: sys_ipc_try_send error %e \n", r);
 	}
 
 	sys_yield();

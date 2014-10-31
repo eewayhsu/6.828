@@ -17,4 +17,18 @@ Q4. Whenever the kernel switches from one environment to another, it must ensure
 
 When the kernel switches from one environment to another it must ensure the old environment's registers are saved so they can be restored later because we will treat this as if it were never interrupted.  This happens when we switch from user mode to kernel mode in the trap frame.   
 
+Challenge
+I began with trying to implement the powerseries, before realizing now I'm very confused by the multiple layers it has.  In this process, I changed ipc_recv so that it can designate a specific env to receive from.  If it can receive from all envs, set source to 0.
 
+I switched to implementing sfork, which allows the parent and child to share their memory pages.  Here I realized I'd probably set a few things incorrectly earlier.  How I did this was to basically take the original fork function.  Here, however, I use duppage_sfork for the addr between UTEXT and USTACKTOP-PGSIZE.  Otherwise I still dup the stack area regularly, so in which case, I use duppage.  
+
+Duppage_sfork does not remap the parents pages as PTE_COW, and PTE_W invalid as duppage does.  It only maps the child pages because they are sharing.  
+
+The new way in which I'm providing functionality of the global thisenv pointer is to use 
+
+extern const volatile struct Env envs[NENV];
+const volatile inline struct Env* getthisenv(){
+        return &envs[ENVX(sys_getenvid())];
+} 
+
+thisenv is then set to getthisenv(), instead of directly being set as &envs[ENVX(sys_get_envid())] in the function calls.   

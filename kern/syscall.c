@@ -345,6 +345,8 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	pte_t *ptep;
 	struct PageInfo *page;
 
+	//cprintf("%d \n", envid);
+
 	if (envid2env(envid, &e, 0) < 0)
 		return -E_BAD_ENV;
 
@@ -372,15 +374,14 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 			return -E_INVAL;}
 
 		if ((uint32_t)e->env_ipc_dstva < UTOP){
-			//if (sys_page_map(0, srcva, envid, e->env_ipc_dstva, perm) < 0){
+			//if (sys_page_map(curenv->env_id, srcva, envid, e->env_ipc_dstva, perm) < 0){
 			//	cprintf("Not enough mem to map srcva at dstva \n");
 			//	return -E_NO_MEM;}
 			//}
 
 			if (page_insert(e->env_pgdir, page, e->env_ipc_dstva, perm) < 0) {
 				cprintf("Not enough mem to map srcva at dstva \n");
-				return -E_NO_MEM;}
-				
+				return -E_NO_MEM;}	
 			}
 		}
 
@@ -410,16 +411,26 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 // Return < 0 on error.  Errors are:
 //	-E_INVAL if dstva < UTOP but dstva is not page-aligned.
 static int
-sys_ipc_recv(void *dstva)
+sys_ipc_recv(envid_t source, void *dstva)
 {
 	// LAB 4: Your code here.
+	// Allow specification of sending env. If 0, then receive from all.  
 	
+	struct Env *e;
+
+	if(source !=0 && (envid2env(source, &e, 0) < 0))
+		return -E_BAD_ENV;
 	
+
 	if(((uint32_t)dstva < UTOP) && ((uint32_t)dstva % PGSIZE != 0))
 		return -E_INVAL;
 
 	curenv->env_ipc_recving = 1;
 	curenv->env_ipc_dstva = dstva;
+
+	//due to new selection process 
+	curenv->env_ipc_from = source;
+
 	curenv->env_status = ENV_NOT_RUNNABLE;
 	curenv->env_tf.tf_regs.reg_eax = 0;
 
@@ -476,7 +487,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_env_set_pgfault_upcall(a1, (void *)a2);
 
 	case SYS_ipc_recv:
-		return sys_ipc_recv((void *)a1);
+		return sys_ipc_recv(a1, (void *)a2);
 
 	case SYS_ipc_try_send:
 		return sys_ipc_try_send(a1, a2, (void *) a3, a4);
