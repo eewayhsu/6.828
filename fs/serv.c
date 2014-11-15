@@ -1,5 +1,5 @@
 /*
- * File system server main loop -
+ File system server main loop -
  * serves IPC requests from other environments.
  */
 
@@ -214,7 +214,22 @@ serve_read(envid_t envid, union Fsipc *ipc)
 		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
 
 	// Lab 5: Your code here:
-	return 0;
+
+	int r;
+	struct OpenFile *o;
+	uint32_t nbytes;
+	
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0) {
+		//the fd is 0 or the fileid inside o not the same 
+		cprintf("serve_read: error in openfile_lookup %e \n", r);
+		return r;
+	}
+
+	if((nbytes = file_read(o->o_file, (void *) ret->ret_buf, req->req_n, o->o_fd->fd_offset)) >= 0)
+		o->o_fd->fd_offset += nbytes;
+
+	return nbytes;
+
 }
 
 
@@ -229,7 +244,20 @@ serve_write(envid_t envid, struct Fsreq_write *req)
 		cprintf("serve_write %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
 
 	// LAB 5: Your code here.
-	panic("serve_write not implemented");
+	int r;
+	struct OpenFile *o;
+	uint32_t nbytes;
+
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0){
+		cprintf("serve_write: error in openfile_lookup %e \n", r);
+		return r;
+	}
+
+	if((nbytes = file_write(o->o_file, (void *) req->req_buf, req->req_n, o->o_fd->fd_offset)) >= 0)
+		o->o_fd->fd_offset += nbytes;
+
+	return nbytes;  
+
 }
 
 // Stat ipc->stat.req_fileid.  Return the file's struct Stat to the

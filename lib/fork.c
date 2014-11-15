@@ -27,7 +27,7 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 	if (!(err & FEC_WR))
-		panic("pgfault: not write \n");
+		panic("pgfault: not write.  error is %e \n", err);
 
 	if(!(pte & PTE_P) || !(pte & PTE_COW))
 		panic("pgfault: bad perm in COW pgfault \n");
@@ -81,17 +81,23 @@ duppage(envid_t envid, unsigned pn)
 	void * addr = (void *) (pn*PGSIZE);
 	int perm = pte & PTE_SYSCALL;
 
+	if ((pte & PTE_SHARE) && (uvpd[PDX(addr)] & PTE_P)){
+		if ((r = sys_page_map(0, addr, envid, addr, perm)) < 0)
+			panic("duppage: sys_page_map SHARE error: %e \n", r);
+		return 0;
+	}
+
 	if (perm & (PTE_W | PTE_COW)){
 
 		perm = (perm | PTE_COW) & ~PTE_W;
 
 		//map child page as PTE_COW
 		if((r = sys_page_map(0, addr, envid, addr, perm)) < 0)
-			panic("duppage: sys_page_map error: %e \n", r);
+			panic("duppage: sys_page_map child error: %e \n", r);
 
 		//remap parent's page as PTE_COW, PTE_W invalid
 		if((r = sys_page_map(0, addr, 0, addr, perm)) < 0)
-			panic("duppage: sys_page_map error: %e \n", r);
+			panic("duppage: sys_page_map parent error: %e \n", r);
 		}
 
 	else {
@@ -99,8 +105,8 @@ duppage(envid_t envid, unsigned pn)
 			panic("duppage: sys_page_map error: %e \n", r);
 		}
 
-	return 0;
-}
+	return 0; }
+
 
 static int
 duppage_sfork(envid_t envid, unsigned pn)
@@ -112,14 +118,17 @@ duppage_sfork(envid_t envid, unsigned pn)
 	void * addr = (void *) (pn*PGSIZE);
 	int perm = pte & PTE_SYSCALL;
 
+        if (pte & PTE_SHARE){
+                if ((r = sys_page_map(0, addr, envid, addr, perm)) < 0)
+                        panic("duppage: sys_page_map SHARE error: %e \n", r);
+
+		}
         //map child page as PTE_COW
         if((r = sys_page_map(0, addr, envid, addr, perm)) < 0)
                 panic("duppage: sys_page_map error: %e \n", r);
 
         return 0;
 }
-
-
 
 
 //

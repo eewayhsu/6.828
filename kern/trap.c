@@ -203,6 +203,14 @@ trap_dispatch(struct Trapframe *tf)
 			reg.reg_edi, reg.reg_esi);
 		return;
 		
+	case IRQ_OFFSET+IRQ_KBD:
+		kbd_intr();
+		return;
+
+	case IRQ_OFFSET+IRQ_SERIAL:
+		serial_intr();
+		return;
+
 	}
 
 	// Handle spurious interrupts
