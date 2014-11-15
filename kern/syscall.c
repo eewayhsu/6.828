@@ -147,6 +147,7 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 
 	e->env_tf = *tf;
 	return 0;
+
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct

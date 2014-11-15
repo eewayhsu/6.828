@@ -718,7 +718,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 	// LAB 3: Your code here.
 	
 	
-	uintptr_t vaStart = (uintptr_t) va;
+	/*uintptr_t vaStart = (uintptr_t) va;
 	uintptr_t vaEnd = ROUNDUP(vaStart + len, PGSIZE);
 
 	pte_t *pte_ptr = NULL;
@@ -734,15 +734,30 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 			return -E_FAULT;}
 	}
 	
-	return 0;
+	return 0;*/
 
+
+    pte_t *pte;
+    uint32_t i;
+    uint32_t va_start = ROUNDDOWN((uint32_t) va, PGSIZE);
+    uint32_t va_end = ROUNDUP(((uint32_t) va) + len, PGSIZE);
+
+    for (i = va_start; i < va_end; i += PGSIZE) {
+        pte = pgdir_walk(env->env_pgdir, (void *) i, 0);
+        if (pte == NULL || i > ULIM || ((*pte & (perm | PTE_P)) != (perm | PTE_P))) {
+            if (i == va_start) {
+                user_mem_check_addr = (uint32_t) va;
+            } else {
+                user_mem_check_addr = i;
+            }
+            return -E_FAULT;
+        }
+    }
+
+	return 0;
 }
 
 
-
-
-
-//
 // Checks that environment 'env' is allowed to access the range
 // of memory [va, va+len) with permissions 'perm | PTE_U | PTE_P'.
 // If it can, then the function simply returns.
