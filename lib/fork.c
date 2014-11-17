@@ -101,7 +101,7 @@ duppage(envid_t envid, unsigned pn)
 		}
 
 	else {
-		if ((r = sys_page_map(0, addr, 0, addr, PTE_U | PTE_P)) < 0)
+		if ((r = sys_page_map(0, addr, envid, addr, PTE_U | PTE_P)) < 0)
 			panic("duppage: sys_page_map error: %e \n", r);
 		}
 

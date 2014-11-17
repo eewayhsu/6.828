@@ -190,6 +190,7 @@ trap_dispatch(struct Trapframe *tf)
 	switch (tf->tf_trapno) {
 	
 	case T_PGFLT:
+		//print_trapframe(tf);
 		page_fault_handler(tf);
 		return;
 	
@@ -379,6 +380,7 @@ page_fault_handler(struct Trapframe *tf)
 
 	else
 		utfp = UXSTACKTOP - 1 - sizeof(struct UTrapframe);
+
 
 	user_mem_assert(curenv, (void *) utfp, sizeof(struct UTrapframe), PTE_W | PTE_U | PTE_P);
 			

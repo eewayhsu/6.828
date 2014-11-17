@@ -65,16 +65,19 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 	int r;
 	void *va = pg ? pg : (void*) NO_PAGE_MAP;
 
-	while(1) {
+	while(true) {
 		r = sys_ipc_try_send(to_env, val, va, perm);
-		if (r == 0)
-			break;
+		
+		if (r >= 0)
+			return;
 
 		if (r != -E_IPC_NOT_RECV)
 			panic("ipc_send: sys_ipc_try_send error %e \n", r);
-	}
 
-	sys_yield();
+		if (r == -E_IPC_NOT_RECV)
+			sys_yield();
+
+	}
 }
 
 // Find the first environment of the given type.  We'll use this to
