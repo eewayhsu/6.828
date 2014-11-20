@@ -82,7 +82,7 @@ umain(int argc, char **argv)
 	if (r != strlen(msg))
 		panic("file_read after file_write returned wrong length: %d", r);
 	if (strcmp(buf, msg) != 0)
-		panic("file_read after file_write returned wrong data");
+		panic("file_read after file_write returned wrong data: buf %s msg %s", (char *) buf, (char *)msg);
 	cprintf("file_read after file_write is good\n");
 
 	// Now we'll try out open

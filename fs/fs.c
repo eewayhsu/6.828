@@ -62,7 +62,16 @@ alloc_block(void)
 	// super->s_nblocks blocks in the disk altogether.
 
 	// LAB 5: Your code here.
-	panic("alloc_block not implemented");
+	int i = 0;
+	for (; i < super->s_nblocks; i++){
+		if (block_is_free(i) == 1){
+			//cprintf("%d\n", i);
+			bitmap[i/32] &= ~(1<<(i%32));
+			flush_block(diskaddr(i));
+			return i;
+		}	
+	}
+		
 	return -E_NO_DISK;
 }
 
@@ -133,9 +142,34 @@ fs_init(void)
 // Hint: Don't forget to clear any block you allocate.
 static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
-{
+{	
        // LAB 5: Your code here.
-       panic("file_block_walk not implemented");
+
+	int32_t new_indirect;
+	
+	if (filebno >= NDIRECT + NINDIRECT)
+		return -E_INVAL;
+
+	if (filebno < NDIRECT) {
+		*ppdiskbno = &f->f_direct[filebno];
+	 } else {
+		if (f->f_indirect) {
+			*ppdiskbno = &((uint32_t *) diskaddr(f->f_indirect))[filebno - NDIRECT];
+		} else {
+			if (!alloc)
+				return -E_NOT_FOUND;
+			new_indirect = alloc_block();
+			if (new_indirect < 0)
+				return -E_NO_DISK;
+	
+			f->f_indirect = new_indirect;
+			flush_block(f);
+			memset(diskaddr(new_indirect), 0, BLKSIZE);
+			*ppdiskbno = &((uint32_t *) diskaddr(f->f_indirect))[filebno - NDIRECT];	
+		}
+	}
+
+	return 0;
 }
 
 // Set *blk to the address in memory where the filebno'th
@@ -150,8 +184,26 @@ int
 file_get_block(struct File *f, uint32_t filebno, char **blk)
 {
        // LAB 5: Your code here.
-       panic("file_get_block not implemented");
-}
+	
+	uint32_t *bno;
+
+	if (file_block_walk(f, filebno, &bno, 1) < 0)
+		return -E_INVAL;
+
+	if (!(*bno)) {
+
+		uint32_t blockno = alloc_block();
+		if (blockno < 0)
+			return -E_NO_DISK;
+
+		*bno = blockno;
+	}
+	
+	*blk = (char *) diskaddr(*bno);
+	return 0;
+
+
+}	
 
 // Try to find a file named "name" in dir.  If so, set *file to it.
 //
@@ -172,6 +224,7 @@ dir_lookup(struct File *dir, const char *name, struct File **file)
 	nblock = dir->f_size / BLKSIZE;
 	for (i = 0; i < nblock; i++) {
 		if ((r = file_get_block(dir, i, &blk)) < 0)
+
 			return r;
 		f = (struct File*) blk;
 		for (j = 0; j < BLKFILES; j++)

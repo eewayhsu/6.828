@@ -1,0 +1,16 @@
+1. The purpose of having an individual handler function for each exception and interrup we have is we have error codes.  Currently, depending on the error, we will either push a zero or push an error code.  We have two different trapframe macros.  If all exceptions and interrupts were delived to the same handler, we would have to do slightly more work in the one trapframe to decide whether we push the error code or 0.  It would be slightly messier.  
+
+Also, different interrupt handlers let you access different pieces of code (when you return).  Having different interrupt handler provides this accessibility that one handler would not.    
+
+2. No, we did not have to do anything.  This happens because interrupt vector 14 is because we don't have the permissions, the general protection trap is triggered instead of the one the user wanted to trigger.  We do not want to allow users to invoke exceptions of their choice.  If the kernel actually allows softint's int 14 instruction to invoke the kernel's page fault handler, then that would mean the user could choose or know which exception handler will throw.  They could then manipulate what is on the stack and what the kernel executes with kernel privliges (making CPL safety useless).     
+
+Challenge: FIXED! 
+
+Directives.  Here, we alter the TRAPHANDLER_NOEC and TRAPHANDLER Macros so that we create a list of the locations of the handlers when we create the traphandlers.  We do this by manipulating .data and .text.  In our macros, we end with .data.  This mean everything afterwards is stored in a different memory location (the data segment).  Thus we put in .int name.  At the beginning of the macros, we at a .text, to insure that they instructions are being read as assembly instructions.  
+
+Later, we use the .data and .global handlers: handlers.  In our C code, we initialize these handlers we put in our data segment.  With extern handlers[], we are able to access the location of these handlers without void handler1, &handler1.  
+This cuts down the amount of code (and redundancy) that we have.  
+
+3.  If we initalized the break point entry IDT to have DPL to be 3, then we will be receiving a break point exception.  Otherwise, we receive a general protection fault because if we set the DPL as 0, the user does not have access.  Eg. the Last variable of the SETGATE.  
+
+4. We shouldn't allow the user to directly call certain interrupts because then we would allow the user to go to certain parts of the code with kernel privilege.    
