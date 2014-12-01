@@ -232,8 +232,9 @@ trap_dispatch(struct Trapframe *tf)
 	// Be careful! In multiprocessors, clock interrupts are
 	// triggered on every CPU.
 	// LAB 6: Your code here.
-
+	
 	lapic_eoi();
+	time_tick();
 	sched_yield();
 
 	// Handle keyboard and serial interrupts.

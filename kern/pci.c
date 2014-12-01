@@ -28,9 +28,13 @@ struct pci_driver pci_attach_class[] = {
 	{ 0, 0, 0 },
 };
 
+
+//void pci_func_enable(struct pci_func *pcif);
+
 // pci_attach_vendor matches the vendor ID and device ID of a PCI device. key1
 // and key2 should be the vendor ID and device ID respectively
 struct pci_driver pci_attach_vendor[] = {
+	{ VENDORID, DEVICEID, &e1000_init },
 	{ 0, 0, 0 },
 };
 
