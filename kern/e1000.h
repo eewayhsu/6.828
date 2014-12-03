@@ -7,7 +7,7 @@
 #define VENDORID 0x8086
 #define DEVICEID 0x100E
 
-volatile uint32_t *e1000;
+//volatile uint32_t *e1000;
 
 int e1000_init(struct pci_func *pci);
 int e1000_transmit(char *data, int len);
