@@ -7,19 +7,18 @@
 #define VENDORID 0x8086
 #define DEVICEID 0x100E
 
-//volatile uint32_t *e1000;
-
+/* Functions */
 int e1000_init(struct pci_func *pci);
 int e1000_transmit(char *data, int len);
 int e1000_receive(char *data);
 
+/* Sizes */
 #define E1000_TXD 64
 #define E1000_RCVD 128
 #define TX_PKT_SIZE 1518
-//BSIZE 00b = 2048 bytes
 #define RCV_PKT_SIZE 2048
 
-// Register Set
+/* Register */
 #define E1000_STATUS   0x00008/4  /* Device Status - RO */
 #define E1000_EERD     0x00014/4  /* EEPROM Read - RW */
 
@@ -36,8 +35,6 @@ int e1000_receive(char *data);
 #define E1000_RDT      0x02818/4  /* RX Descriptor Tail - RW */
 #define E1000_RAL      0x05400/4  /* Receive Address Low - RW */
 #define E1000_RAH      0x05404/4  /* Receive Address High - RW */
-#define E1000_IPAV     0x05838/4  /* IP Address Valid - RW */
-
 
 #define E1000_TCTL     0x00400/4  /* TX Control - RW */
 #define E1000_TCTL_EN     0x00000002    /* enable tx */
@@ -57,12 +54,12 @@ int e1000_receive(char *data);
 
 #define E1000_TIPG     0x00410/4  /* TX Inter-packet gap -RW */
 
-/* Transmit Descriptor bit definitions */
+/* Transmit Descriptor */
 #define E1000_TXD_CMD_RS     0x00000008 /* Report Status */
 #define E1000_TXD_CMD_EOP    0x00000001 /* End of Packet */
 #define E1000_TXD_STAT_DD    0x00000001 /* Descriptor Done */
 
-/* Receive Descriptor bit definitions */
+/* Receive Descriptor */
 #define E1000_RXD_STAT_DD       0x01    /* Descriptor Done */
 #define E1000_RXD_STAT_EOP      0x02    /* End of Packet */
 

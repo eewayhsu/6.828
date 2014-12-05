@@ -26,8 +26,8 @@ e1000_init(struct pci_func *pci)
 
 	e1000 = mmio_map_region(pci->reg_base[0], pci->reg_size[0]);
 		
-	memset(tx_array, 0, sizeof(struct tx_desc) * E1000_TXD);
-	memset(tx_pkt_bufs, 0, sizeof(struct tx_pkt) * E1000_TXD);
+	memset(tx_array, 0x0, sizeof(struct tx_desc) * E1000_TXD);
+	memset(tx_pkt_bufs, 0x0, sizeof(struct tx_pkt) * E1000_TXD);
 	for (i = 0; i < E1000_TXD; i++) {
 		tx_array[i].addr = PADDR(tx_pkt_bufs[i].buf);
 		tx_array[i].status |= E1000_TXD_STAT_DD;
@@ -87,15 +87,9 @@ e1000_init(struct pci_func *pci)
 
 	// Set the Receive Descriptor Length Register
 	e1000[E1000_RDLEN] = sizeof(struct rcv_desc)  * E1000_RCVD;
-	//e1000[E1000_RDLEN] = 16 * 128;
-	
 
         // Set the Receive Descriptor Head and Tail Registers
-	
-	//e1000[E1000_RDT] = 0x0;
-	//e1000[E1000_RDH] = E1000_RCVD - 1;
-
-	e1000[E1000_RDT] = 127;
+	e1000[E1000_RDT] = E1000_RCVD - 1;
 	e1000[E1000_RDH] = 0x0;
 	
 	// Initialize the Receive Control Register
@@ -105,12 +99,11 @@ e1000_init(struct pci_func *pci)
 	e1000[E1000_RCTL] &= ~E1000_RCTL_RDMTS;
 	e1000[E1000_RCTL] &= ~E1000_RCTL_MO;
 	e1000[E1000_RCTL] |= E1000_RCTL_BAM;
-	e1000[E1000_RCTL] &= ~E1000_RCTL_SZ; // 2048 byte size
+	//e1000[E1000_RCTL] &= ~E1000_RCTL_SZ; // 2048 byte size
 	e1000[E1000_RCTL] |= E1000_RCTL_SECRC;
 
 
 	cprintf("addr is %08x \n", e1000[E1000_STATUS]);		
-
 	return 0;
 
 }
@@ -124,7 +117,6 @@ e1000_transmit(char *data, int len)
 
 	uint32_t tdt = e1000[E1000_TDT];
 
-	// Check if next tx desc is free
 	if (tx_array[tdt].status & E1000_TXD_STAT_DD) {
 		memcpy(tx_pkt_bufs[tdt].buf, data, len);
 		tx_array[tdt].length = len;
@@ -134,21 +126,18 @@ e1000_transmit(char *data, int len)
 		tx_array[tdt].cmd |= E1000_TXD_CMD_EOP;
 
 		e1000[E1000_TDT] = (tdt + 1) % E1000_TXD;
-	}
-	else { // queue full
-		return -E_TX_FULL;
+	
+		return 0;
 	}
 	
-	return 0;
+	return -E_TX_FULL;
 }
 
 int
 e1000_receive(char *data)
 {
 	uint32_t rdt, len;
-	//rdt = e1000[E1000_RDT];
 	rdt = (e1000[E1000_RDT] + 1) % E1000_RCVD;
-
 
 	if (rcv_array[rdt].status & E1000_RXD_STAT_DD) {
 		if (!(rcv_array[rdt].status & E1000_RXD_STAT_EOP)) {
@@ -159,12 +148,11 @@ e1000_receive(char *data)
 		memcpy(data, rcv_pkt_bufs[rdt].buf, len);
 		rcv_array[rdt].status &= ~E1000_RXD_STAT_DD;
 		rcv_array[rdt].status &= ~E1000_RXD_STAT_EOP;
-		//e1000[E1000_RDT] = (rdt + 1) % E1000_RCVD;
+	
 		e1000[E1000_RDT] = rdt;
 	
 		return len;
 	}
 
-	//queue empty
 	return -E_RCV_EMPTY;
 }

@@ -4,4 +4,6 @@ Currently the transmission ring is, if it is free (the DD bit is set), then we m
 
 We then move onto the next spot in the queue.  We loop around by taking the mod of E1000_TXD.  
 
- 
+Q2.  Currently I have a ring for the recieve.  I set my tail to 127 and head to 0 as there are 128 descriptors.  However in my function, I start at tail = 0 because I (+1 %128) at the beginning of the call.  
+
+This should receive all packets in order because it then updates the tail at the end of each call.  This way we will continue to scan.  When we reach a DD that is not set, we say that our ring is empty.  Here I return an error.  Thus like in the transmit, when our returned integer is not postive, we know we are at empty and we must try again.   
