@@ -1,0 +1,7 @@
+Q1.  Currently when the queue is full, I return an error code which I have added.  Then when I'm actually trying to send, I do a while loop checking if the returned value is 0.  This should be similar to what we do for sys_ipc_try_send because the environment will have to retry. 
+
+Currently the transmission ring is, if it is free (the DD bit is set), then we memcpy the data into the tx_pkt_buf at the empty spot.  We then set the len and the status (so it's no longer free).  We also set the Report Status and End of Packets in the tx_array[tdt].cmd.  
+
+We then move onto the next spot in the queue.  We loop around by taking the mod of E1000_TXD.  
+
+ 

@@ -132,4 +132,7 @@ sys_user_try_send(char *data, int len){
 
 }
 
-
+int 
+sys_user_try_recv(char *data, int *len){
+	return syscall(SYS_user_try_recv, 1, (uint32_t)data, (uint32_t)len, 0, 0, 0);
+}

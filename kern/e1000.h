@@ -13,17 +13,15 @@ int e1000_init(struct pci_func *pci);
 int e1000_transmit(char *data, int len);
 int e1000_receive(char *data);
 
-#define E1000_TXDESC 64
-#define E1000_RCVDESC 64
+#define E1000_TXD 64
+#define E1000_RCVD 128
 #define TX_PKT_SIZE 1518
+//BSIZE 00b = 2048 bytes
 #define RCV_PKT_SIZE 2048
 
 // Register Set
 #define E1000_STATUS   0x00008/4  /* Device Status - RO */
 #define E1000_EERD     0x00014/4  /* EEPROM Read - RW */
-
-#define E1000_EERD_START 0x01
-#define E1000_EERD_DONE  0x10
 
 #define E1000_TDBAL    0x03800/4  /* TX Descriptor Base Address Low - RW */
 #define E1000_TDBAH    0x03804/4  /* TX Descriptor Base Address High - RW */
@@ -38,6 +36,8 @@ int e1000_receive(char *data);
 #define E1000_RDT      0x02818/4  /* RX Descriptor Tail - RW */
 #define E1000_RAL      0x05400/4  /* Receive Address Low - RW */
 #define E1000_RAH      0x05404/4  /* Receive Address High - RW */
+#define E1000_IPAV     0x05838/4  /* IP Address Valid - RW */
+
 
 #define E1000_TCTL     0x00400/4  /* TX Control - RW */
 #define E1000_TCTL_EN     0x00000002    /* enable tx */
