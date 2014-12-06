@@ -136,3 +136,16 @@ int
 sys_user_try_recv(char *data, int *len){
 	return syscall(SYS_user_try_recv, 1, (uint32_t)data, (uint32_t)len, 0, 0, 0);
 }
+
+int 
+sys_MAC_high(void){
+	return syscall(SYS_MAC_high, 0, 0, 0, 0, 0, 0);  
+
+}
+
+int
+sys_MAC_low(void){
+        return syscall(SYS_MAC_low, 0, 0, 0, 0, 0, 0);
+
+}
+

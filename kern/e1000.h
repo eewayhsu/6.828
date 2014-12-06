@@ -11,6 +11,8 @@
 int e1000_init(struct pci_func *pci);
 int e1000_transmit(char *data, int len);
 int e1000_receive(char *data);
+int e1000_MAC_high(void);
+int e1000_MAC_low(void);
 
 /* Sizes */
 #define E1000_TXD 64

@@ -20,6 +20,8 @@ enum {
 	SYS_time_msec,
 	SYS_user_try_send,
 	SYS_user_try_recv,
+	SYS_MAC_high,
+	SYS_MAC_low,
 	NSYSCALLS
 };
 

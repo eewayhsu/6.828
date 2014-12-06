@@ -18,8 +18,23 @@ Q4.  It took approximately.
 2 hour to code Receive (very similar to Transmit in terms of set up)
 2 days to debug Receive
 4 hours to do part Web Server
+6 hours challenge.
+~ 6 days.  
 
-Haven't started doing challenge yet. 
+Challenge:
 
+I did the MAC address challenge.  
+
+Get MAC from EEPROM:
+First I did the simple part!  Reading the MAC address out of the EEPROM.  After reading out sections 5.3.1 and a few others I decided that I would be setting the start bit then reading until the end bit.  After some experimenting it seemed like this would be giving me 4 numbers at a time.  (Which makes sense because there are 16bits of data and each number is 4 bytes... I think).  These numbers however were given in the backwards order.  Thus I made sure to set them up in the correct order when I actually set the RAL and RAH.  It took 3 different reads.    
+
+Syscalls:
+Now that I have the MAC address, I wrote 2 functions in e1000.c that get the low and the high addresses.  I feel like i probably could just have accessed the e1000 object globally?  I wrote 2 different syscalls, one returning the high and one returning the low portion of the MAC address.  This was particularly confusing because I tried doing it as one syscall that returned the whole MAC address.  However, being unfamiliar with C I was unable to do the whole memory address, dereferencing... efficiently.  Thus I gave up and made it two different syscalls.  
+
+Reset Hardcoded lwIP:
+Then I went into the .jif file and called the two syscalls.  I am attempting to then get the 2 numbers that I need for each register of the MAC address that is being set in hwaddr.  However, I've yet to perfect this.  My method of manipulating bits seems to overflow.  
+
+Test:
+Then, I would have to reset the MAC address in the GNUmakefile to reset the QEMU MAC address.  However, I am also having problems here.  Every set of numbers I've tried so far have resulted in errors where my qemu doesn't connect and run, or has some other issue where nic can't start or something.  These will be worked on later.  However, I think the basic idea of the MAC Address challenge has been dealt with (get MAC address, make syscall, reset hardcoded lwIP).    
 
 

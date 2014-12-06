@@ -495,6 +495,20 @@ sys_user_try_recv(char *data, int *len)
 	
 }
 
+static int
+sys_MAC_high(void)
+{	
+	int high = e1000_MAC_high();
+	return high;
+}
+
+static int
+sys_MAC_low(void)
+{       
+        int low = e1000_MAC_low();
+        return low;
+}
+
 
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
@@ -560,6 +574,13 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
 	case SYS_user_try_recv:
 		return sys_user_try_recv((char *) a1, (int *) a2);
+
+	case SYS_MAC_high:
+		return sys_MAC_high();
+
+        case SYS_MAC_low:
+                return sys_MAC_low();
+
 	
 	default:
 		return -E_INVAL;

@@ -15,7 +15,6 @@ volatile uint32_t *e1000;
 struct tx_desc tx_array[E1000_TXD] __attribute__ ((aligned (16)));
 struct tx_pkt tx_pkt_bufs[E1000_TXD];
 
-
 struct rcv_desc rcv_array[E1000_RCVD] __attribute__ ((aligned (16)));
 struct rcv_pkt rcv_pkt_bufs[E1000_RCVD];
 
@@ -56,12 +55,10 @@ e1000_init(struct pci_func *pci)
 	// Initialize the Transmit Control Register 
 	e1000[E1000_TCTL] |= E1000_TCTL_EN;
 	e1000[E1000_TCTL] |= E1000_TCTL_PSP;
-	e1000[E1000_TCTL] &= ~E1000_TCTL_CT;
-	//E1000_TCTL_CT to binary 0b111111110000
-	e1000[E1000_TCTL] |= (0x10) << 4;
-	e1000[E1000_TCTL] &= ~E1000_TCTL_COLD;
-	//E1000_TCTL_COLD to binary 0b1111111111000000000000
-	e1000[E1000_TCTL] |= (0x40) << 12;
+
+	//TODO: Fix shifts. 
+	e1000[E1000_TCTL] |= (0x10) << 1;	//TCTL_CT
+	e1000[E1000_TCTL] |= (0x40) << 3;	//TCTL_COLD
 
 
 	// Program the Transmit IPG Register
@@ -73,13 +70,39 @@ e1000_init(struct pci_func *pci)
 
 	/* Recieve Initialization */
 	// Recieve Address Registers
-	//MAC address 52:54:00:12:(34:56) -> Low (High) bits.  
-	// 00110100 : 00110110 : 00000000 : 00001100 : 00100010 : 00111000
-	
-	e1000[E1000_RAL] = 0x12005452; 
+	/* e1000[E1000_RAL] = 0x12005452; 
+	e1000[E1000_RAH] |= 0x5634; */
 
-	e1000[E1000_RAH] |= 0x5634;
-	e1000[E1000_RAH] |= 0x1 << 31;
+	//Challenge! EEPROM and MAC Addresses
+	/* Data [31:16] | Address [15:8] | RSV. [7:5] | DONE [4] | RSV [3:1] | START [0] */
+
+	#define EERD_START 0x1
+	#define EERD_DONE 0x10	
+	
+	e1000[E1000_EERD] = 0x0 << 8;			// 5452 0010 
+	e1000[E1000_EERD] |= EERD_START;		//Set Read
+	while(!(e1000[E1000_EERD] & EERD_DONE));	//Read until Done
+        cprintf("EERD %x \n", e1000[E1000_EERD]);
+ 
+	e1000[E1000_RAL] = e1000[E1000_EERD] >> 16; 
+
+	e1000[E1000_EERD] = 0x1 << 8;			// 1200 0110	
+	e1000[E1000_EERD] |= EERD_START;                //Set Read
+        while(!(e1000[E1000_EERD] & EERD_DONE));   	//Read until Done
+        cprintf("EERD %x \n", e1000[E1000_EERD]);
+
+	e1000[E1000_RAL] |= (e1000[E1000_EERD] &= ~0xffff);
+	
+	e1000[E1000_EERD] = 0x2 << 8;
+	e1000[E1000_EERD] |= EERD_START;
+	while(!(e1000[E1000_EERD] & EERD_DONE));
+        cprintf("EERD %x \n", e1000[E1000_EERD]);
+	
+	e1000[E1000_RAH] = e1000[E1000_EERD] >> 16;
+
+	e1000[E1000_RAH] |= 0x1 << 31; 
+        cprintf("RAH %x \n", e1000[E1000_RAH]);
+
 
 	// Program the Receive Descriptor Base Address Registers
 	e1000[E1000_RDBAL] = PADDR(rcv_array);
@@ -107,6 +130,23 @@ e1000_init(struct pci_func *pci)
 	return 0;
 
 }
+
+
+int
+e1000_MAC_high(void){
+ 	int high;
+	high = e1000[E1000_RAH] & 0xffff;
+	return high; 
+}
+
+int 
+e1000_MAC_low(void){
+        int low;                  
+        low = e1000[E1000_RAL];
+        return low;
+}
+
+
 
 int
 e1000_transmit(char *data, int len)
